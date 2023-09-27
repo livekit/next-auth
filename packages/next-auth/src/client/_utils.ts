@@ -36,7 +36,7 @@ export async function fetchData<T = any>(
   { ctx, req = ctx?.req }: CtxOrReq = {}
 ): Promise<T | null> {
   const url = `${apiBaseUrl(__NEXTAUTH)}/${path}`
-  let res: Response | null = null
+  let resCopy: Response | undefined
   try {
     const options: RequestInit = {
       headers: {
@@ -50,12 +50,13 @@ export async function fetchData<T = any>(
       options.method = "POST"
     }
 
-    res = await fetch(url, options)
+    const res = await fetch(url, options)
+    resCopy = res.clone()
     const data = await res.json()
     if (!res.ok) throw data
     return Object.keys(data).length > 0 ? data : null // Return null if data empty
   } catch (error) {
-    const body = res ? await res.text() : null
+    const body = resCopy ? await resCopy.text() : undefined
     logger.error("CLIENT_FETCH_ERROR", { error: error as Error, url, body })
     return null
   }
